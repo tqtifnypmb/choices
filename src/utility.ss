@@ -1,6 +1,8 @@
 (library (choice utility)
  (export list->indexed-list indexed-list-index
-         new)
+         new uv-version uv-version-string
+         uv-strerror uv-err-name uv-translate-sys-error
+         address->code code->address)
  (import (chezscheme))
 
  (define-syntax new
@@ -37,4 +39,25 @@
    (if (null? match)
     (raise (make-violation))
     (cdar match))))
+
+ ;code object
+ (define address->code foreign-callable-code-object)
+ (define code->address foreign-callable-entry-point)
+
+ ;version
+ (define uv-version
+  (foreign-procedure "uv_version" () unsigned-32))
+
+ (define uv-version-string
+  (foreign-procedure "uv_version_string" () string))
+
+ ;error
+ (define uv-strerror
+  (foreign-procedure "uv_strerror" (int) string))
+
+ (define uv-err-name
+  (foreign-procedure "uv_err_name" (int) string))
+
+ (define uv-translate-sys-error
+  (foreign-procedure "uv_translate_sys_error" (int) int))
 )

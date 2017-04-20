@@ -6,27 +6,30 @@
          uv-prepare-start uv-prepare-stop make-timer-handle
          uv-timer-start uv-timer-stop uv-timer-again
          uv-timer-set-repeat uv-timer-get-repeat
-         make-async-handle uv-async-send)
+         make-async-handle uv-async-send release-handle)
  (import (chezscheme)
          (choice utility))
 
  (define-record-type uv-handle 
-  (fields (immutable ptr) (mutable cb)))
+  (fields (immutable ptr) (mutable cbs)))
 
- (define (replace-cb h cb)
-  (let ((old (uv-handle-cb h)))
-   (if (= old 0)
-    (uv-handle-cb-set! cb)
-    (begin
-     (unlock-object old)
-     (uv-handle-cb-set! cb)))))
+ (define (replace-cb handle type cb)
+  (let-values (((old remain)
+                (partition (lambda (x) (eq? (car x) type)) (uv-handle-cbs handle))))
+   (unless (null? old)
+    (unlock-object (address->code (cdar old))))
 
- (define (release-cb h)
-  (let ((cb (uv-handle-cb h)))
-   (if (not (= cb 0))
-    (begin (unlock-object cb)
-           (uv-handle-cb-set! 0))
-    (uv-handle-cb-set! 0))))
+   (if (eq? #f cb)
+    (uv-handle-cbs-set! handle remain)
+    (uv-handle-cbs-set! handle (append remain 
+                                       (list (cons type 
+                                                   (code->address cb))))))))
+
+ (define (release-cb handle type)
+  (replace-cb handle type #f))
+
+ (define (uv-handle-type-cb handle type)
+  (cadar (filter (lambda (x) (eq? (car x) type)) (uv-handle-cbs handle))))
 
  ;common
  (define uv-is-active
@@ -44,9 +47,23 @@
  (define uv-had-ref
   (foreign-procedure "uv_has_ref" (uptr) boolean))
 
+ (define uv-close-f
+  (foreign-procedure "uv_close" (uptr uptr) void))
+
+ (define (uv-close handle cb)
+  (let ((fcb (foreign-callable cb (uptr) void)))
+   (lock-object fcb)
+   (replace-cb handle 'close fcb)
+   (uv-close-f (uv-handle-ptr handle) (code->address fcb))))
+
  (define (uv-handle-size type)
   (handle-size (indexed-list-index handle-type 
                                    type)))
+
+ (define (release-handle handle)
+  (for-each (lambda (cb) (unlock-object (address->code (cdr cb))))
+            (uv-handle-cbs handle))
+  (foreign-free (uv-handle-ptr handle)))
 
  (define handle-size
   (foreign-procedure "uv_handle_size" (int) size_t))
@@ -73,30 +90,30 @@
 
  (define-syntax new-handle
   (syntax-rules ()
-   ((_ loop init type) (let ((p (new loop init (handle-size type))))
+   ((_ loop init type) (let ((p (new loop init (uv-handle-size type))))
                          (if (boolean? p)
                          (raise (make-violation))
-                         (make-uv-handle p 0))))
-   ((_ loop init type arg ...) (let ((p (new loop init (handle-size type) arg ...)))
+                         (make-uv-handle p '()))))
+   ((_ loop init type arg ...) (let ((p (new loop init (uv-handle-size type) arg ...)))
                                  (if (boolean? p)
                                  (raise (make-violation))
-                                 (make-uv-handle p 0))))))
+                                 (make-uv-handle p '()))))))
  
  (define-syntax handle-start
   (syntax-rules ()
    ((_ start handle cb) (let ((fcb (foreign-callable cb (uptr) void)))
                           (lock-object fcb)
-                          (replace-cb handle fcb)
-                          (start (uv-handle-ptr handle) fcb)))
+                          (replace-cb handle 'start fcb)
+                          (start (uv-handle-ptr handle) (code->address fcb))))
    ((_ start handle cb arg ...) (let ((fcb (foreign-callable cb (uptr) void)))
                                   (lock-object fcb)
-                                  (replace-cb handle fcb)
-                                  (start (uv-handle-ptr handle) fcb arg ...)))))
+                                  (replace-cb handle 'start fcb)
+                                  (start (uv-handle-ptr handle) (code->address fcb) arg ...)))))
 
 
  (define-syntax handle-stop
   (syntax-rules ()
-   ((_ stop handle) (begin (release-cb handle)
+   ((_ stop handle) (begin (release-cb handle 'start)
                            (stop (uv-handle-ptr handle))))))
 
   ;check
@@ -175,22 +192,97 @@
  (define (uv-timer-stop handle)
   (handle-stop timer-stop handle))
 
- (define uv-timer-again
+ (define timer-again
   (foreign-procedure "uv_timer_again" (uptr) int))
 
- (define uv-timer-set-repeat
+ (define (uv-timer-again handle)
+  (timer-again (uv-handle-ptr handle)))
+
+ (define timer-set-repeat
   (foreign-procedure "uv_timer_set_repeat" (uptr unsigned-64) int))
 
- (define uv-timer-get-repeat
+ (define (uv-timer-set-repeat handle repeat)
+  (timer-set-repeat (uv-handle-ptr handle) repeat))
+
+ (define timer-get-repeat
   (foreign-procedure "uv_timer_get_repeat" (uptr) unsigned-64))
+
+ (define (uv-timer-get-repeat handle)
+  (timer-get-repeat (uv-handle-ptr handle)))
 
  ;async
  (define async-init
   (foreign-procedure "uv_async_init" (uptr uptr uptr) int))
 
  (define (make-async-handle loop cb)
-  (new-handle loop async-init 'async cb))
+  (let* ((fcb (foreign-callable cb (uptr) void))
+         (res (new-handle loop async-init 'async (code->address cb))))
+   (replace-cb res 'async fcb)
+   (lock-object fcb)
+   res))
 
- (define uv-async-send
+ (define async-send
   (foreign-procedure "uv_async_send" (uptr) int))
+
+ (define (uv-async-send handle)
+  (async-send (uv-handle-ptr handle)))
+
+ ;stream
+ (define shutdown
+  (foreign-procedure "uv_shutdown" (uptr uptr uptr) int))
+
+ (define (uv-shutdown req handle cb)
+  (let ((fcb (foreign-callable cb (uptr int) void)))
+   (replace-cb handle 'shutdown fcb)
+   (lock-object fcb)
+   (shutdown req (uv-handle-ptr handle) (code->address fcb))))
+
+ (define listen
+  (foreign-procedure "uv_listen" (uptr int uptr) int))
+
+ (define (uv-listen handle backlog cb)
+  (let ((fcb (foreign-callable cb (uptr int) void)))
+   (replace-cb handle 'listen cb)
+   (lock-object fcb)
+   (listen (uv-handle-ptr handle) backlog (code->address fcb))))
+
+ (define accept
+  (foreign-procedure "uv_accept" (uptr uptr) int))
+
+ (define (uv-append serv cli)
+  (accept (uv-handle-ptr serv)
+          (uv-handle-ptr cli)))
+
+ (define read-start
+  (foreign-procedure "uv_read_start" (uptr uptr uptr) int))
+
+ ;FIXME - messed with uv_buf_t
+ (define (uv-read-start handle alloc-cb read-cb)
+  (let ((afcb (foreign-callable alloc-cb (uptr size_t uptr) void))
+        (rfcb (foreign-callable read-cb (uptr size_t utpr) void)))
+   (replace-cb handle 'alloc afcb)
+   (lock-object afcb)
+
+   (replace-cb handle 'read rfcb)
+   (lock-object rfcb)
+   (read-start (uv-handle-ptr handle) 
+               (code->address afcb) 
+               (code->address rfcb))))
+  
+ (define read-stop
+  (foreign-procedure "uv_read_stop" (uptr) int))
+
+ (define (uv-read-stop handle)
+  (release-cb handle 'read)
+  (read-stop (uv-handle-ptr handle)))
+
+ (define write-f
+  (foreign-procedure "uv_write" (uptr uptr u8* unsigned-int uptr) int))
+
+ (define (uv-write req handle bufs nbufs cb)
+  (let ((fcb (foreign-callable cb (uptr int) void)))
+   (replace-cb handle 'write fcb)
+   (lock-object fcb)
+   (write-f req (uv-handle-ptr handle) bufs nbufs (code->address fcb))))
 )
+
