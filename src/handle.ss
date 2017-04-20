@@ -10,6 +10,13 @@
  (import (chezscheme)
          (choice utility))
 
+ ;buf
+ (define-ftype uv-buf
+  (struct
+   (base u8*)
+   (len size_t)))
+
+ ;handle
  (define-record-type uv-handle 
   (fields (immutable ptr) (mutable cbs)))
 
@@ -249,17 +256,16 @@
  (define accept
   (foreign-procedure "uv_accept" (uptr uptr) int))
 
- (define (uv-append serv cli)
+ (define (uv-accept serv cli)
   (accept (uv-handle-ptr serv)
           (uv-handle-ptr cli)))
 
  (define read-start
   (foreign-procedure "uv_read_start" (uptr uptr uptr) int))
 
- ;FIXME - messed with uv_buf_t
  (define (uv-read-start handle alloc-cb read-cb)
-  (let ((afcb (foreign-callable alloc-cb (uptr size_t uptr) void))
-        (rfcb (foreign-callable read-cb (uptr size_t utpr) void)))
+  (let ((afcb (foreign-callable alloc-cb (uptr size_t (* uv-buf)) void))
+        (rfcb (foreign-callable read-cb (uptr size_t (* uv-buf)) void)))
    (replace-cb handle 'alloc afcb)
    (lock-object afcb)
 
@@ -277,12 +283,37 @@
   (read-stop (uv-handle-ptr handle)))
 
  (define write-f
-  (foreign-procedure "uv_write" (uptr uptr u8* unsigned-int uptr) int))
+  (foreign-procedure "uv_write" (uptr uptr (* uv-buf) unsigned-int uptr) int))
 
+ ;FIXME: 
  (define (uv-write req handle bufs nbufs cb)
   (let ((fcb (foreign-callable cb (uptr int) void)))
    (replace-cb handle 'write fcb)
    (lock-object fcb)
    (write-f req (uv-handle-ptr handle) bufs nbufs (code->address fcb))))
+
+ (define try-write
+  (foreign-procedure (uptr (* uv-buf) int) int))
+
+ (define (uv-try-write handle bufs nbufs)
+  (try-write (uv-handle-ptr handle) bufs nbufs))
+
+ (define is-readable
+  (foreign-procedure "uv_is_readable" (uptr) boolean))
+
+ (define (uv-is-readable handle)
+  (is-readable (uv-handle-ptr handle)))
+
+ (define is-writable
+  (foreign-procedure "uv_is_writable" (uptr) boolean))
+
+ (define (uv-is-writable handle)
+  (is-writable (uv-handle-ptr handle)))
+
+ (define stream-set-blocking
+  (foreign-procedure "uv_stream_set_blocking" (uptr boolean) int))
+
+ (define (uv-stream-set-blocking handle block)
+  (stream-set-blocking (uv-handle-ptr handle) block))
 )
 
