@@ -1,12 +1,9 @@
 (library (choice handle)
- (export uv-is-active uv-is-closing uv-ref
-         uv-unref uv-had-ref make-check-handle
-         uv-check-start uv-check-stop make-idle-handle
-         uv-idle-start uv-idle-stop make-prepare-handle
-         uv-prepare-start uv-prepare-stop make-timer-handle
-         uv-timer-start uv-timer-stop uv-timer-again
-         uv-timer-set-repeat uv-timer-get-repeat
-         new make-async-handle uv-async-send release-handle)
+ (export (uv-handle replace-cb release-cb
+          uv-is-active uv-is-closing uv-ref
+          uv-unref uv-had-ref uv-close 
+          release-handle new new-handle
+          handle-start handle-stop cb->fcb)
  (import (chezscheme)
          (choice utility)
          (choice buf))
