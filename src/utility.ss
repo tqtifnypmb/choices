@@ -1,30 +1,9 @@
 (library (choice utility)
  (export list->indexed-list indexed-list-index
-         new uv-version uv-version-string
+         uv-version uv-version-string
          uv-strerror uv-err-name uv-translate-sys-error
          address->code code->address)
  (import (chezscheme))
-
- (define-syntax new
-  (syntax-rules ()
-   ((_ init size) (let* ((obj (foreign-alloc size))
-                        (res (init obj)))
-                    (if (= res 0)
-                     obj
-                     (begin (foreign-free obj)
-                            #f))))
-   ((_ loop init size) (let* ((obj (foreign-alloc size))
-                         (res (init loop obj)))
-                    (if (= res 0)
-                     obj
-                     (begin (foreign-free obj)
-                            #f))))
-   ((_ loop init size arg ...) (let* ((obj (foreign-alloc size))
-                                 (res (init loop obj arg ...)))
-                            (if (= res 0)
-                             obj
-                             (begin (foreign-free obj)
-                                    #f))))))
 
  (define (list->indexed-list lst)
   (let loop ((lst lst) (res '()) (idx 0))
