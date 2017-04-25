@@ -1,11 +1,3 @@
-(library (choice pipe)
- (export make-pipe-handle uv-pipe-open
-         uv-pipe-bind uv-pipe-connect
-         uv-pipe-getsockname uv-pipe-getpeername
-         uv-pipe-pending-count)
- (import (chezscheme)
-         (choice handle))
-
  (define pipe-init
   (foreign-procedure "uv_pipe_init" (uptr uptr boolean) int))
 
@@ -52,4 +44,3 @@
 
  (define (uv-pipe-pending-count handle)
   (pipe-pending-count (uv-handle-ptr handle)))
-)

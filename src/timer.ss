@@ -1,10 +1,3 @@
-(library (choice timer)
- (export make-timer-handle uv-timer-start
-         uv-timer-stop uv-timer-again
-         uv-timer-set-repeat uv-timer-get-repeat)
- (import (chezscheme)
-         (choice handle))
- 
  (define timer-init
   (foreign-procedure "uv_timer_init" (uptr uptr) int))
 
@@ -40,4 +33,3 @@
 
  (define (uv-timer-get-repeat handle)
   (timer-get-repeat (uv-handle-ptr handle)))
-)

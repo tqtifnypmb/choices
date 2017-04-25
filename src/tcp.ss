@@ -1,13 +1,3 @@
-(library (choice tcp)
- (export make-tcp-handle make-tcp-handle-ex
-         uv-tcp-open uv-tcp-nodelay
-         uv-tcp-keepalive uv-tcp-simultaneous-accepts
-         uv-tcp-bind uv-tcp-getsockname uv-tcp-getpeername
-         uv-tcp-connect)
- (import (chezscheme)
-         (choice handle)
-         (choice buf))
-
  ;tcp
  (define tcp-init
   (foreign-procedure "uv_tcp_init" (uptr uptr) int))
@@ -46,7 +36,7 @@
   (tcp-simultaneous-accepts (uv-handle-ptr handle) enable))
 
  (define tcp-bind
-  (foreign-procedure "uv_tcp_bind" (utpr (* sockaddr) unsigned-int) int))
+  (foreign-procedure "uv_tcp_bind" (uptr (* sockaddr) unsigned-int) int))
 
  (define (uv-tcp-bind handle addr flags)
   (tcp-bind (uv-handle-ptr handle) addr flags))
@@ -56,11 +46,16 @@
 
  (define (uv-tcp-getsockname handle addr len)
   (tcp-getsockname (uv-handle-ptr handle) addr len))
+ 
+ (define tcp-getpeername
+  (foreign-procedure "uv_tcp_getpeername" (uptr uptr (* int)) int))
+
+ (define (uv-tcp-getpeername handle addr len)
+  (tcp-getpeername (uv-handle-ptr handle) addr len))
 
  (define tcp-connect
   (foreign-procedure "uv_tcp_connect" (uptr uptr (* sockaddr) uptr) int))
 
  (define (uv-tcp-connect req handle addr cb)
   (let ((fcb (cb->fcb handle 'tcp-connect cb (uptr int) void)))
-   (tcp-connect req (uv-handle-ptr handle) addr (code->addr fcb))))
-)
+   (tcp-connect req (uv-handle-ptr handle) addr (code->address fcb))))

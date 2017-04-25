@@ -1,16 +1,3 @@
-(library (choice udp)
- (export make-udp-handle make-udp-handle-ex
-         uv-udp-open uv-udp-join-group
-         uv-udp-leave-group uv-udp-set-membership
-         uv-udp-set-multicast-ttl uv-udp-set-multicast-interface
-         uv-udp-set-broadcast uv-udp-set-ttl uv-udp-bind
-         uv-udp-send uv-udp-try-send uv-udp-recv-start
-         uv-udp-rect-stop)
- (import (chezscheme)
-         (choice buf)
-         (choice handle)
-         (choice buf))
-
  (define udp-init
   (foreign-procedure "uv_udp_init" (uptr uptr) int))
 
@@ -30,7 +17,7 @@
   (udp-open (uv-handle-ptr handle) sockfd))
 
  (define udp-bind
-  (foreign-procedure "uv_udp_bind" (uptr uptr (* sockaddr) unsigned-int) int))
+  (foreign-procedure "uv_udp_bind" (uptr (* sockaddr) unsigned-int) int))
 
  (define (uv-udp-bind handle addr flags)
   (udp-bind (uv-handle-ptr handle) addr flags))
@@ -51,7 +38,7 @@
   (udp-set-multicast-loop (uv-handle-ptr handle) on))
 
  (define udp-set-multicast-ttl
-  (foreign-procedure "uv_udp_set_multicast_ttl" (uptr int)))
+  (foreign-procedure "uv_udp_set_multicast_ttl" (uptr int) int))
 
  (define (uv-udp-set-multicast-ttl handle ttl)
   (udp-set-multicast-ttl (uv-handle-ptr handle) ttl))
@@ -69,7 +56,7 @@
   (udp-set-broadcast (uv-handle-ptr handle) on))
 
  (define udp-set-ttl
-  (foreign-procedure (uptr int) int))
+  (foreign-procedure "uv_udp_set_ttl" (uptr int) int))
 
  (define (uv-udp-set-ttl handle ttl)
   (udp-set-ttl (uv-handle-ptr handle) ttl))
@@ -82,17 +69,17 @@
    (udp-send req (uv-handle-ptr handle) bufs nbufs addr (code->address cb))))
 
  (define udp-try-send
-  (foreign-procedure "uv_udp_try_send" (uptr (* uv-buf) unsigned-int (* sockaddr))))
+  (foreign-procedure "uv_udp_try_send" (uptr (* uv-buf) unsigned-int (* sockaddr)) int))
 
  (define (uv-udp-try-send handle bufs nbufs addr)
-  (udp-try-send (uv-handle-ptr hande) bufs nbufs addr))
+  (udp-try-send (uv-handle-ptr handle) bufs nbufs addr))
 
  (define udp-recv-start
   (foreign-procedure "uv_udp_recv_start" (uptr uptr uptr ) int))
 
  (define (uv-udp-recv-start handle acb rcb)
-  (let ((facb (cb->fcb handle 'udp-recv-alloc cb (uptr size_t (* uv-buf)) void))
-         (frcb (cb->fcb handle 'udp-recv-read cb (uptr size_t (* uv-buf) (* sockaddr) unsigned-int) void)))
+  (let ((facb (cb->fcb handle 'udp-recv-alloc acb (uptr size_t (* uv-buf)) void))
+         (frcb (cb->fcb handle 'udp-recv-read rcb (uptr size_t (* uv-buf) (* sockaddr) unsigned-int) void)))
     (udp-recv-start (uv-handle-ptr handle) (code->address facb) (code->address frcb))))
 
  (define udp-recv-stop
@@ -100,4 +87,3 @@
 
  (define (uv-udp-recv-stop handle)
   (udp-recv-stop (uv-handle-ptr handle)))
-)

@@ -1,8 +1,3 @@
-(library (choice async)
- (export make-async-handle uv-async-send)
- (import (chezscheme)
-         (choice handle)
-         
  (define async-init
   (foreign-procedure "uv_async_init" (uptr uptr uptr) int))
 
@@ -18,4 +13,3 @@
 
  (define (uv-async-send handle)
   (async-send (uv-handle-ptr handle)))
-)

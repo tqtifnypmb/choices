@@ -1,10 +1,3 @@
-(library (choice buf)
- (export uv-buf sockaddr-in sockaddr
-         make-sockaddr-in release-sockaddr-in
-         release-uv-buf cast)
- (import (chezscheme))
-
-
  ;buf
  (define-ftype uv-buf
   (struct
@@ -38,7 +31,7 @@
 
  (define (make-sockaddr-in)
   (let ((ptr (make-ftype-pointer sockaddr-in
-              (foreign-aloc
+              (foreign-alloc
                (ftype-sizeof sockaddr-in)))))
    ptr))
 
@@ -49,4 +42,3 @@
   (syntax-rules ()
    ((_ type ptr) (make-ftype-pointer type 
                     (ftype-pointer-address ptr)))))
-)

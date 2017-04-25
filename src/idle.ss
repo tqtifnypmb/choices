@@ -1,9 +1,3 @@
-(library (choice idle)
- (export make-idle-handle uv-idle-start
-         uv-idle-stop)
- (import (chezscheme)
-         (choice handle))
-
  (define idle-init
   (foreign-procedure "uv_idle_init" (uptr uptr) int))
 
@@ -21,4 +15,3 @@
 
  (define (uv-idle-stop handle)
   (handle-stop idle-stop handle))
-)

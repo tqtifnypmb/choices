@@ -1,11 +1,3 @@
-(library (choice loop)
- (export make-loop make-default-loop uv-loop-close
-         uv-run uv-loop-alive uv-loop-stop
-         uv-now uv-backend-timeout uv-update-time
-         uv-run-default uv-run-once uv-run-nowait)
- (import (chezscheme)
-         (choice utility))
-
  (define (make-loop)
   (new loop-init (uv-loop-size)))
 
@@ -62,4 +54,3 @@
 
  (define uv-update-time
   (foreign-procedure "uv_update_time" (uptr) void))
-)

@@ -1,10 +1,3 @@
-(library (choice utility)
- (export list->indexed-list indexed-list-index
-         uv-version uv-version-string
-         uv-strerror uv-err-name uv-translate-sys-error
-         address->code code->address)
- (import (chezscheme))
-
  (define (list->indexed-list lst)
   (let loop ((lst lst) (res '()) (idx 0))
    (if (null? lst)
@@ -39,4 +32,3 @@
 
  (define uv-translate-sys-error
   (foreign-procedure "uv_translate_sys_error" (int) int))
-)

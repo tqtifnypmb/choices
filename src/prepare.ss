@@ -1,9 +1,3 @@
-(library (choice prepare)
- (export make-prepare-handle uv-prepare-start
-         uv-prepare-stop)
- (import (chezscheme)
-         (choice handle))
-
  (define prepare-init
   (foreign-procedure "uv_prepare_init" (uptr uptr) int))
 
@@ -21,4 +15,3 @@
 
  (define (uv-prepare-stop handle)
   (handle-stop prepare-stop handle))
-)

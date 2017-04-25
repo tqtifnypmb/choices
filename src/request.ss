@@ -1,13 +1,7 @@
-(library (choice request)
- (export uv-req-size uv-cancel
-         make-request release-request)
- (import (chezscheme)
-         (choice utility))
-
  (define (uv-req-size type)
   (request-size (indexed-list-index request-type type)))
 
- (define reqeust-size
+(define request-size
   (foreign-procedure "uv_req_size" (int) size_t))
 
  (define request-type
@@ -31,4 +25,3 @@
 
  (define (release-request req)
   (foreign-free req))
-)

@@ -1,13 +1,3 @@
-(library (choice handle)
- (export (uv-handle replace-cb release-cb
-          uv-is-active uv-is-closing uv-ref
-          uv-unref uv-had-ref uv-close 
-          release-handle new new-handle
-          handle-start handle-stop cb->fcb)
- (import (chezscheme)
-         (choice utility)
-         (choice buf))
-
  ;handle
  (define-record-type uv-handle 
   (fields (immutable ptr) (mutable cbs)))
@@ -134,4 +124,3 @@
                           (replace-cb handle type fcb)
                           (lock-object fcb)
                           fcb))))
-)

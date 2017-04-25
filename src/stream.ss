@@ -1,12 +1,3 @@
-(library (choice stream)
- (export uv-shutdown uv-listen uv-accept
-         uv-read-start uv-read-stop
-         uv-write uv-try-write
-         uv-is-readable uv-is-writable
-         uv-stream-set-blocking)
- (import (chezscheme)
-         (choice handle))
-
  (define shutdown
   (foreign-procedure "uv_shutdown" (uptr uptr uptr) int))
 
@@ -75,4 +66,3 @@
 
  (define (uv-stream-set-blocking handle block)
   (stream-set-blocking (uv-handle-ptr handle) block))
-)
