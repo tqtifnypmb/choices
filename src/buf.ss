@@ -4,6 +4,27 @@
    (base (* char))
    (len size_t)))
 
+ (define (fill-uv-buf buf size)
+  (let ((region (make-ftype-pointer char
+                 (foreign-alloc size))))
+   (ftype-set! uv-buf (base) buf region)
+   (ftype-set! uv-buf (len) buf size)))
+
+ (define (uv-buf->bytevector buf)
+  (let ((len (ftype-ref uv-buf (len) buf)))
+   (let loop ((vec (make-bytevector len))
+              (idx 0))
+    (if (< idx len)
+     (begin
+      (bytevector-u8-set! vec idx (ftype-ref uv-buf (base) buf idx))
+      (loop vec (+ idx 1)))
+     vec))))
+
+ (define (uv-buf->string buf)
+  (let ((tx (make-transcoder (utf-8-codec)))
+        (vec (uv-buf->bytevector buf)))
+   (bytevector->string vec tx)))
+
 ; (define (string->uv-buf str)
 ; )
 

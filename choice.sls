@@ -3,13 +3,12 @@
          ;; buf
          uv-buf sockaddr-in sockaddr
          make-sockaddr-in release-sockaddr-in
-         release-uv-buf cast
+         release-uv-buf fill-uv-buf
+         uv-buf->bytevector uv-buf->string
          
          ;; utility
-         list->indexed-list indexed-list-index
          uv-version uv-version-string
          uv-strerror uv-err-name uv-translate-sys-error
-         address->code code->address
          
          ;; loop
          make-loop make-default-loop uv-loop-close
@@ -18,12 +17,10 @@
          uv-run-default uv-run-once uv-run-nowait
 
          ;; handle
-         uv-handle replace-cb release-cb
+         uv-handle release-handle 
          uv-is-active uv-is-closing uv-ref
          uv-unref uv-had-ref uv-close 
-         release-handle new new-handle
-         handle-start handle-stop cb->fcb
-         
+                  
          ;; async
          make-async-handle uv-async-send
 

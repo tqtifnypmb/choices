@@ -98,12 +98,12 @@
   (syntax-rules ()
    ((_ loop init type) (let ((p (new loop init (uv-handle-size type))))
                          (if (boolean? p)
-                         (raise (make-violation))
-                         (make-uv-handle p '()))))
+                          (raise (make-error))
+                          (make-uv-handle p '()))))
    ((_ loop init type arg ...) (let ((p (new loop init (uv-handle-size type) arg ...)))
                                  (if (boolean? p)
-                                 (raise (make-violation))
-                                 (make-uv-handle p '()))))))
+                                  (raise (make-error))
+                                  (make-uv-handle p '()))))))
  
  (define-syntax handle-start
   (syntax-rules ()

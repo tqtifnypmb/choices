@@ -2,7 +2,7 @@
   (foreign-procedure "uv_pipe_init" (uptr uptr boolean) int))
 
  (define (make-pipe-handle loop ipc)
-  (new-handle loop pipe-init ipc))
+  (new-handle loop pipe-init 'named-pipe ipc))
 
  (define pipe-open
   (foreign-procedure "uv_pipe_open" (uptr int) int))
