@@ -9,7 +9,7 @@
                 (lambda (e) (symbol=? (car e) type)) 
                 lst)))
    (if (null? match)
-    (raise (make-violation))
+    (raise (make-message-condition "unknown type"))
     (cdar match))))
 
  ;code object

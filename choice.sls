@@ -3,8 +3,9 @@
          ;; buf
          uv-buf sockaddr-in sockaddr
          make-sockaddr-in release-sockaddr-in
-         release-uv-buf fill-uv-buf
-         uv-buf->bytevector uv-buf->string
+         release-uv-buf uv-buf-fill
+         uv-buf->list uv-buf->string
+         string->uv-buf list->uv-buf
          
          ;; utility
          uv-version uv-version-string

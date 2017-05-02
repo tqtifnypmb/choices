@@ -63,7 +63,7 @@
                         fs-poll
                         handle
                         idle
-                        named-piple
+                        named-pipe
                         poll
                         prepare
                         process
@@ -98,11 +98,11 @@
   (syntax-rules ()
    ((_ loop init type) (let ((p (new loop init (uv-handle-size type))))
                          (if (boolean? p)
-                          (raise (make-error))
+                          (raise (make-message-condition "can't alloc new handle"))
                           (make-uv-handle p '()))))
    ((_ loop init type arg ...) (let ((p (new loop init (uv-handle-size type) arg ...)))
                                  (if (boolean? p)
-                                  (raise (make-error))
+                                  (raise (make-message-condition "can't alloc new handle"))
                                   (make-uv-handle p '()))))))
  
  (define-syntax handle-start
